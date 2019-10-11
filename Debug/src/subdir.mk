@@ -4,20 +4,23 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/simple\ shell.cpp 
+../src/UnixShell.cpp \
+../src/main.cpp 
 
 OBJS += \
-./src/simple\ shell.o 
+./src/UnixShell.o \
+./src/main.o 
 
 CPP_DEPS += \
-./src/simple\ shell.d 
+./src/UnixShell.d \
+./src/main.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-src/simple\ shell.o: ../src/simple\ shell.cpp
+src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross G++ Compiler'
-	g++ -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/simple shell.d" -MT"src/simple\ shell.d" -o "$@" "$<"
+	g++ -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

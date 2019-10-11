@@ -1,10 +1,11 @@
-//============================================================================
-// Name        : simple.cpp
-// Author      : Mahmoud sharshar
-// Version     :
-// Copyright   : Your copyright notice
-// Description : simple shell involving some commands in unix environment
-//============================================================================
+/*
+ * UnixShell.cpp
+ *
+ *  Created on: Oct 11, 2019
+ *      Author: mahmoud_sharshar
+ */
+
+#include "UnixShell.h"
 
 #include <iostream>
 #include <string>
@@ -17,14 +18,8 @@
 #include<vector>
 #include <csignal>
 #include <fstream>
-using namespace std;
-const char** parseInput(string input);
-void executeCommand(const char **&command);
-void signalHandler(int sign);
-void cd(const char *path);
 
-bool background = false;
-int main() {
+void Shell::runShell() {
 	string input;
 	signal(SIGCHLD,signalHandler);
 	while (true) {
@@ -34,7 +29,7 @@ int main() {
 		// parse user input
 		const char **command = parseInput(input);
 		// Handle empty input
-		if(!command[0])
+		if (!command[0])
 			continue;
 		// execute command
 		executeCommand(command);
@@ -42,12 +37,9 @@ int main() {
 		// free location of command after excution
 		delete[] command;
 	}
-
-	return 0;
 }
-
 // split string input to construct the corresponding command
-const char** parseInput(string input) {
+const char** Shell::parseInput(string input) {
 	stringstream ss(input);
 	// create vector to hold parts of input
 	vector<string> words;
@@ -57,7 +49,7 @@ const char** parseInput(string input) {
 		words.push_back(word);
 	}
 	// if user want to run process in backgroud
-	if(words[words.size()-2] == "&"){
+	if (words[words.size() - 2] == "&") {
 		background = true;
 		words.pop_back();
 	}
@@ -65,15 +57,15 @@ const char** parseInput(string input) {
 	const char **command = new const char*[words.size()];
 
 	for (int i = 0; i < (int) words.size() - 1; i++) {
-			command[i] = words[i].c_str();
+		command[i] = words[i].c_str();
 	}
 	// insert null to the end of command
-	command[words.size()-1] = NULL;
+	command[words.size() - 1] = NULL;
 	return command;
 }
 
 // execute command using fork and execvp
-void executeCommand(const char **&command) {
+void Shell::executeCommand(const char **&command) {
 	// terminate the shell if exit command is entered
 	if (strcmp(command[0], "exit") == 0) {
 		exit(0);
@@ -96,20 +88,20 @@ void executeCommand(const char **&command) {
 	} else if (pid > 0 && !background) {
 		int status_loc;
 		waitpid(pid, &status_loc, WUNTRACED);
-	} else if(pid < 0){
+	} else if (pid < 0) {
 		perror("Fork failed");
 		exit(1); // this will terminate the entire program
 	}
 }
 // execute cd command
-void cd(const char *path) {
+void Shell::cd(const char *path) {
 	if (chdir(path) < 0) {
 		perror(path);
 	}
 }
 
 // signal handler routine
-void signalHandler(int sig){
+void Shell::signalHandler(int sig) {
 	ofstream logFile;
 	logFile.open("logfile.txt", std::ios_base::app);
 	logFile << "Child process was terminated .\n";
