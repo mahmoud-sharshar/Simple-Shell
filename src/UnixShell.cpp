@@ -14,26 +14,27 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include<sstream>
+#include <sstream>
 #include<vector>
 #include <csignal>
 #include <fstream>
 
 void Shell::runShell() {
 	string input;
-	signal(SIGCHLD,signalHandler);
+	signal(SIGCHLD, this->signalHandler);
+	this->clearLog();
 	while (true) {
 		cout << "simple shell$ ";
 		//wait for user input
 		getline(cin, input);
 		// parse user input
-		const char **command = parseInput(input);
+		const char **command = this->parseInput(input);
 		// Handle empty input
 		if (!command[0])
 			continue;
 		// execute command
-		executeCommand(command);
-		background = false;
+		this->executeCommand(command);
+		this->background = false;
 		// free location of command after excution
 		delete[] command;
 	}
@@ -72,7 +73,7 @@ void Shell::executeCommand(const char **&command) {
 	}
 	// cd command is a built_in command in shell
 	if (strcmp(command[0], "cd") == 0) {
-		cd(command[1]);
+		this->cd(command[1]);
 		return;
 	}
 	// create child process
@@ -85,7 +86,7 @@ void Shell::executeCommand(const char **&command) {
 			perror(command[0]);
 			exit(1); // this will terminate the child process only
 		}
-	} else if (pid > 0 && !background) {
+	} else if (pid > 0 && !this->background) {
 		int status_loc;
 		waitpid(pid, &status_loc, WUNTRACED);
 	} else if (pid < 0) {
@@ -103,7 +104,14 @@ void Shell::cd(const char *path) {
 // signal handler routine
 void Shell::signalHandler(int sig) {
 	ofstream logFile;
-	logFile.open("logfile.txt", std::ios_base::app);
+	logFile.open("/home/mahmoud_sharshar/eclipse-workspace/simple shell/Debug/logfile.txt", std::ios_base::app);
 	logFile << "Child process was terminated .\n";
 	logFile.close();
+}
+// clear the log file when the shell created
+void Shell::clearLog(){
+	ofstream logFile;
+		logFile.open("/home/mahmoud_sharshar/eclipse-workspace/simple shell/Debug/logfile.txt");
+		logFile << "";
+		logFile.close();
 }
