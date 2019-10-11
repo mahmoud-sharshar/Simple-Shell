@@ -15,21 +15,30 @@
 #include <sys/wait.h>
 #include<sstream>
 #include<vector>
-
+#include <csignal>
+#include <fstream>
 using namespace std;
 const char** parseInput(string input);
 void executeCommand(const char **&command);
+void signalHandler(int sign);
 void cd(const char *path);
+
+bool background = false;
 int main() {
 	string input;
+	signal(SIGCHLD,signalHandler);
 	while (true) {
 		cout << "simple shell$ ";
 		//wait for user input
 		getline(cin, input);
 		// parse user input
 		const char **command = parseInput(input);
+		// Handle empty input
+		if(!command[0])
+			continue;
 		// execute command
 		executeCommand(command);
+		background = false;
 		// free location of command after excution
 		delete[] command;
 	}
@@ -47,15 +56,19 @@ const char** parseInput(string input) {
 		ss >> word;
 		words.push_back(word);
 	}
+	// if user want to run process in backgroud
+	if(words[words.size()-2] == "&"){
+		background = true;
+		words.pop_back();
+	}
 	// create dynamic array of type char array to hold parts of command
 	const char **command = new const char*[words.size()];
 
-	for (int i = 0; i < (int) words.size(); i++) {
-		if (i < (int) words.size() - 1)
+	for (int i = 0; i < (int) words.size() - 1; i++) {
 			command[i] = words[i].c_str();
-		else
-			command[i] = NULL; // insert null to the end of command
 	}
+	// insert null to the end of command
+	command[words.size()-1] = NULL;
 	return command;
 }
 
@@ -80,10 +93,10 @@ void executeCommand(const char **&command) {
 			perror(command[0]);
 			exit(1); // this will terminate the child process only
 		}
-	} else if (pid > 0) {
+	} else if (pid > 0 && !background) {
 		int status_loc;
 		waitpid(pid, &status_loc, WUNTRACED);
-	} else {
+	} else if(pid < 0){
 		perror("Fork failed");
 		exit(1); // this will terminate the entire program
 	}
@@ -93,4 +106,12 @@ void cd(const char *path) {
 	if (chdir(path) < 0) {
 		perror(path);
 	}
+}
+
+// signal handler routine
+void signalHandler(int sig){
+	ofstream logFile;
+	logFile.open("logfile.txt", std::ios_base::app);
+	logFile << "Child process was terminated .\n";
+	logFile.close();
 }
