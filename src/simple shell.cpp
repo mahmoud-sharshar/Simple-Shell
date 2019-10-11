@@ -19,7 +19,7 @@
 using namespace std;
 const char** parseInput(string input);
 void executeCommand(const char **&command);
-
+void cd(const char *path);
 int main() {
 	string input;
 	while (true) {
@@ -58,11 +58,17 @@ const char** parseInput(string input) {
 	}
 	return command;
 }
+
 // execute command using fork and execvp
 void executeCommand(const char **&command) {
 	// terminate the shell if exit command is entered
 	if (strcmp(command[0], "exit") == 0) {
 		exit(0);
+	}
+	// cd command is a built_in command in shell
+	if (strcmp(command[0], "cd") == 0) {
+		cd(command[1]);
+		return;
 	}
 	// create child process
 	pid_t pid = fork();
@@ -80,5 +86,11 @@ void executeCommand(const char **&command) {
 	} else {
 		perror("Fork failed");
 		exit(1); // this will terminate the entire program
+	}
+}
+// execute cd command
+void cd(const char *path) {
+	if (chdir(path) < 0) {
+		perror(path);
 	}
 }
