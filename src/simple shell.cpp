@@ -17,9 +17,28 @@
 #include<vector>
 
 using namespace std;
+const char** parseInput(string input);
+void executeCommand(const char **&command);
+
+int main() {
+	string input;
+	while (true) {
+		cout << "simple shell$ ";
+		//wait for user input
+		getline(cin, input);
+		// parse user input
+		const char **command = parseInput(input);
+		// execute command
+		executeCommand(command);
+		// free location of command after excution
+		delete[] command;
+	}
+
+	return 0;
+}
 
 // split string input to construct the corresponding command
-const char** getCommand(string input) {
+const char** parseInput(string input) {
 	stringstream ss(input);
 	// create vector to hold parts of input
 	vector<string> words;
@@ -34,30 +53,20 @@ const char** getCommand(string input) {
 		if (i < (int) words.size() - 1)
 			command[i] = words[i].c_str();
 		else
-			command[i] = NULL;// insert null to the end of command
+			command[i] = NULL; // insert null to the end of command
 		//cout << command[i] << endl;
 	}
 	return command;
 }
-int main() {
-	string input;
-	while (true) {
-		cout << "simple shell$ ";
-		getline(cin, input);
-		const char **command = getCommand(input);
-		// create a child process
-		pid_t pid = fork();
-		if(strcmp(command[0],"exit")==0){
-			exit(0);
-		}
-		if (pid == 0) {
-			execvp(command[0],(char* const*)command);
-		} else if (pid > 0) {
-			wait(NULL);
-		}
-		// free location of command after excution
-		delete [] command;
-	}
 
-	return 0;
+void executeCommand(const char **&command) {
+	pid_t pid = fork();
+	if (strcmp(command[0], "exit") == 0) {
+		exit(0);
+	}
+	if (pid == 0) {
+		execvp(command[0], (char* const*) command);
+	} else if (pid > 0) {
+		wait(NULL);
+	}
 }
