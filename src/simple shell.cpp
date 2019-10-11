@@ -3,7 +3,7 @@
 // Author      : Mahmoud sharshar
 // Version     :
 // Copyright   : Your copyright notice
-// Description : simple shell
+// Description : simple shell involving some commands in unix environment
 //============================================================================
 
 #include <iostream>
@@ -49,24 +49,36 @@ const char** parseInput(string input) {
 	}
 	// create dynamic array of type char array to hold parts of command
 	const char **command = new const char*[words.size()];
+
 	for (int i = 0; i < (int) words.size(); i++) {
 		if (i < (int) words.size() - 1)
 			command[i] = words[i].c_str();
 		else
 			command[i] = NULL; // insert null to the end of command
-		//cout << command[i] << endl;
 	}
 	return command;
 }
-
+// execute command using fork and execvp
 void executeCommand(const char **&command) {
-	pid_t pid = fork();
+	// terminate the shell if exit command is entered
 	if (strcmp(command[0], "exit") == 0) {
 		exit(0);
 	}
+	// create child process
+	pid_t pid = fork();
 	if (pid == 0) {
-		execvp(command[0], (char* const*) command);
+		// if the command fail to execute, execvp will return -1.
+		// otherwise, it will never return
+		if (execvp(command[0], (char* const*) command) < 0) {
+			// show the context of the error in the commands
+			perror(command[0]);
+			exit(1); // this will terminate the child process only
+		}
 	} else if (pid > 0) {
-		wait(NULL);
+		int status_loc;
+		waitpid(pid, &status_loc, WUNTRACED);
+	} else {
+		perror("Fork failed");
+		exit(1); // this will terminate the entire program
 	}
 }
